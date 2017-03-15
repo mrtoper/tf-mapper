@@ -237,8 +237,8 @@ class RoomFactory:
     __helper = di.ComponentRequest('CoordinatesHelper')
     __map = di.ComponentRequest('Map')
     __registry = di.ComponentRequest('Registry')
-    def createInDirection(self, direction, QPoint, QGraphicsScene):
-        return self.createAt(self.__helper.movePointInDirection(QPoint, direction), QGraphicsScene)
+    def createInDirection(self, direction, QPoint, QGraphicsScene, roomId=None):
+        return self.createAt(self.__helper.movePointInDirection(QPoint, direction), QGraphicsScene, roomId)
 
 
     def pasteAt(self, QPoint, QGraphicsScene, data):
@@ -281,8 +281,14 @@ class RoomFactory:
         return room
 
     def spawnRoom(self, id=None, properties=None):
+        idUsed = False
+        if id is not None:
+            if id in self.__map.rooms().keys():
+                QtGui.QMessageBox.question(self.__registry.mainWindow, 'Alert', 'Room ID exists: ' + id, QtGui.QMessageBox.Ok)
+                idUsed = True
+
         room = Room(0, properties)
-        id_ = uuid.uuid1() if id==None else id
+        id_ = uuid.uuid1() if id==None or idUsed else id
         room.setId(id_)
         viewRoom = view.Room()
         room.setView(viewRoom)
@@ -441,45 +447,45 @@ class Navigator(QtCore.QObject):
     def enableAutoPlacement(self, enable):
         self.__enableAutoPlacement = bool(enable)
 
-    def goUp(self):
+    def goUp(self, roomId=None):
         #print 'goUp'
-        return self.goFromActive(Direction.U, Direction.D)
+        return self.goFromActive(Direction.U, Direction.D, roomId)
 
-    def goDown(self):
+    def goDown(self, roomId=None):
         #print 'goDown'
-        return self.goFromActive(Direction.D, Direction.U)
+        return self.goFromActive(Direction.D, Direction.U, roomId)
 
-    def goNorth(self):
-        return self.goFromActive(Direction.N, Direction.S)
+    def goNorth(self, roomId=None):
+        return self.goFromActive(Direction.N, Direction.S, roomId)
 
-    def goNorthEast(self):
-        return self.goFromActive(Direction.NE, Direction.SW)
+    def goNorthEast(self, roomId=None):
+        return self.goFromActive(Direction.NE, Direction.SW, roomId)
 
-    def goEast(self):
-        return self.goFromActive(Direction.E, Direction.W)
+    def goEast(self, roomId=None):
+        return self.goFromActive(Direction.E, Direction.W, roomId)
 
-    def goSouthEast(self):
-        return self.goFromActive(Direction.SE, Direction.NW)
+    def goSouthEast(self, roomId=None):
+        return self.goFromActive(Direction.SE, Direction.NW, roomId)
 
-    def goSouth(self):
-        return self.goFromActive(Direction.S, Direction.N)
+    def goSouth(self, roomId=None):
+        return self.goFromActive(Direction.S, Direction.N, roomId)
 
-    def goSouthWest(self):
-        return self.goFromActive(Direction.SW, Direction.NE)
+    def goSouthWest(self, roomId=None):
+        return self.goFromActive(Direction.SW, Direction.NE, roomId)
 
-    def     goWest(self):
-        return self.goFromActive(Direction.W, Direction.E)
+    def     goWest(self, roomId=None):
+        return self.goFromActive(Direction.W, Direction.E, roomId)
 
-    def goNorthWest(self):
-        return self.goFromActive(Direction.NW, Direction.SE)
+    def goNorthWest(self, roomId=None):
+        return self.goFromActive(Direction.NW, Direction.SE, roomId)
 
-    def goFromActive(self, fromExit, toExit):
+    def goFromActive(self, fromExit, toExit, roomId):
         if self.__registry.currentlyVisitedRoom is None:
             return QtGui.QMessageBox.question(self.__registry.mainWindow, 'Alert', 'There is no active room selected', QtGui.QMessageBox.Ok)
 
         currentRoom = self.__registry.currentlyVisitedRoom
 
-        return self.go(currentRoom, fromExit, toExit)
+        return self.go(currentRoom, fromExit, toExit, roomId)
 
     def dropRoomFromShadow(self):
         if self.__registry.currentlyVisitedRoom is None:
@@ -541,7 +547,7 @@ class Navigator(QtCore.QObject):
             if sourceSide[2] is not None and sourceSide[2] == direction:
                 return self.markVisitedRoom(link.getDestinationFor(currentRoom))
 
-    def goCustom(self, direction):
+    def goCustom(self, direction, roomId=None):
         if self.__registry.currentlyVisitedRoom is None:
             return QtGui.QMessageBox.question(self.__registry.mainWindow, 'Alert', 'There is no active room selected', QtGui.QMessageBox.Ok)
 
@@ -562,7 +568,7 @@ class Navigator(QtCore.QObject):
                 return self.markVisitedRoom(link.getDestinationFor(currentRoom))
 
 
-    def go(self, currentRoom, fromExit, toExit):
+    def go(self, currentRoom, fromExit, toExit, roomId):
 
         self._lastCreatedRoom = None
         self._lastCreatedLink = None
@@ -608,7 +614,7 @@ class Navigator(QtCore.QObject):
                 if destinationRoom is not None:
                     newRoom = destinationRoom.getModel()
                 else:
-                    newRoom = self.__roomFactory.createAt(currentRoom.getView().pos(), otherLevel.getView())
+                    newRoom = self.__roomFactory.createAt(currentRoom.getView().pos(), otherLevel.getView(), roomId)
                     self._lastCreatedRoom = newRoom
 
                 currentRoom.addExit(fromExit)
@@ -644,11 +650,13 @@ class Navigator(QtCore.QObject):
                     if currentRoom.getView().scene() is not roomShadow.scene():
                         currentRoom.getView().scene().addItem(roomShadow)
                         currentRoom.getView().scene().addItem(shadowLink)
-                    if destinationRoom is not None:
+                    if destinationRoom is not None and destinationRoom.getId() is roomId:
                         pass
                     else:
                         newPosition = self.__coordinatesHelper.movePointInDirection(currentRoom.getView().pos(), fromExit)
                         roomShadow.setPos(newPosition)
+                        if destinationRoom is not None:
+                            QtGui.QMessageBox.question(self.__registry.mainWindow, 'Alert', 'Room position overlapped', QtGui.QMessageBox.Ok)
 
                     roomShadow.setVisible(True)
                     shadowLink.setVisible(True)
@@ -662,7 +670,6 @@ class Navigator(QtCore.QObject):
                     roomShadow.setEntryBy(toExit)
                     shadowLink.redraw()
             else:
-
                 currentRoom.addExit(fromExit)
 
                 fromExitDirection = fromExit
@@ -688,7 +695,7 @@ class Navigator(QtCore.QObject):
                     self.markVisitedRoom(destinationRoom.getModel())
                     newRoom = destinationRoom.getModel()
                 else:
-                    newRoom = self.__roomFactory.createInDirection(fromExitDirection, currentRoom.getView().pos(), currentRoom.getView().scene())
+                    newRoom = self.__roomFactory.createInDirection(fromExitDirection, currentRoom.getView().pos(), currentRoom.getView().scene(), roomId)
                     self._lastCreatedRoom = newRoom
                     newRoom.addExit(toExit)
                     self.markVisitedRoom(newRoom)

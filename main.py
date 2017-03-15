@@ -187,25 +187,25 @@ if __name__ == '__main__':
     def dispatchServerCommand(command):
         if command == 'dumpImage': dumpImage()
         if command == 'navigate:exit:n': navigator.goNorth()
-        if command == 'navigate:exit:polnoc': navigator.goNorth()
+        if command == 'navigate:exit:north': navigator.goNorth()
         if command == 'navigate:exit:ne': navigator.goNorthEast()
-        if command == 'navigate:exit:polnocny-wschod': navigator.goNorthEast()
+        if command == 'navigate:exit:northeast': navigator.goNorthEast()
         if command == 'navigate:exit:e': navigator.goEast()
-        if command == 'navigate:exit:wschod': navigator.goEast()
+        if command == 'navigate:exit:east': navigator.goEast()
         if command == 'navigate:exit:se': navigator.goSouthEast()
-        if command == 'navigate:exit:poludniowy-wschod': navigator.goSouthEast()
+        if command == 'navigate:exit:southeast': navigator.goSouthEast()
         if command == 'navigate:exit:s': navigator.goSouth()
-        if command == 'navigate:exit:poludnie': navigator.goSouth()
+        if command == 'navigate:exit:south': navigator.goSouth()
         if command == 'navigate:exit:sw': navigator.goSouthWest()
-        if command == 'navigate:exit:poludniowy-zachod': navigator.goSouthWest()
+        if command == 'navigate:exit:southwest': navigator.goSouthWest()
         if command == 'navigate:exit:w': navigator.goWest()
-        if command == 'navigate:exit:zachod': navigator.goWest()
+        if command == 'navigate:exit:west': navigator.goWest()
         if command == 'navigate:exit:nw': navigator.goNorthWest()
-        if command == 'navigate:exit:polnocny-zachod': navigator.goNorthWest()
+        if command == 'navigate:exit:northwest': navigator.goNorthWest()
         if command == 'navigate:exit:u': navigator.goUp()
-        if command == 'navigate:exit:gora': navigator.goUp()
+        if command == 'navigate:exit:up': navigator.goUp()
         if command == 'navigate:exit:d': navigator.goDown()
-        if command == 'navigate:exit:dol': navigator.goDown()
+        if command == 'navigate:exit:down': navigator.goDown()
         if command == 'revert': revertToLastRoom()
 
         if command == 'map:undo': navigator.undoCreation()
@@ -222,6 +222,48 @@ if __name__ == '__main__':
 
         if command == 'path:clear': highlightPath(mapModel, registry.currentlyVisitedRoom, None)
 
+        # room id
+        match =  re.match(r'navigate:exit:(n|north):(.*)', command)
+        if match is not None:
+            navigator.goNorth(match.group(2))
+
+        match =  re.match(r'navigate:exit:(ne|northeast):(.*)', command)
+        if match is not None:
+            navigator.goNorthEast(match.group(2))
+
+        match =  re.match(r'navigate:exit:(nw|northwest):(.*)', command)
+        if match is not None:
+            navigator.goNorthWest(match.group(2))
+
+        match =  re.match(r'navigate:exit:(s|south):(.*)', command)
+        if match is not None:
+            navigator.goSouth(match.group(2))
+
+        match =  re.match(r'navigate:exit:(se|southeast):(.*)', command)
+        if match is not None:
+            navigator.goSouthEast(match.group(2))
+
+        match =  re.match(r'navigate:exit:(sw|southwest):(.*)', command)
+        if match is not None:
+            navigator.goSouthWest(match.group(2))
+
+        match =  re.match(r'navigate:exit:(e|east):(.*)', command)
+        if match is not None:
+            navigator.goEast(match.group(2))
+
+        match =  re.match(r'navigate:exit:(w|west):(.*)', command)
+        if match is not None:
+            navigator.goWest(match.group(2))
+
+        match =  re.match(r'navigate:exit:(d|down):(.*)', command)
+        if match is not None:
+            navigator.goDown(match.group(2))
+
+        match =  re.match(r'navigate:exit:(u|up):(.*)', command)
+        if match is not None:
+            navigator.goUp(match.group(2))
+
+
         match =  re.match(r'map:room:delete:(.*)', command)
         if match is not None:
             commandDeleteRoomById(match.group(1))
@@ -231,15 +273,19 @@ if __name__ == '__main__':
             highlightPath(mapModel, registry.currentlyVisitedRoom, str(match.group(1)))
 
 
-        match =  re.match(r'navigate:custom:(.*)', command)
+        match =  re.match(r'navigate:custom:([^:]*)', command)
         if match is not None:
             navigator.goCustom(match.group(1))
+
+        match =  re.match(r'navigate:custom:([^:]*):(.*)', command)
+        if match is not None:
+            navigator.goCustom(match.group(1), match.group(2))
 
         match =  re.match(r'navigate:follow:(.*)', command)
         if match is not None:
             navigator.goFollow(match.group(1))
 
-        match =  re.match(r'lookup:([a-z0-9\-]*)', command)
+        match =  re.match(r'lookup:(.*)', command)
         if match is not None:
             lookupRoom(match.group(1))
 
